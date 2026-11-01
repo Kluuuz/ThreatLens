@@ -16,6 +16,7 @@ def url_rep(url):  # custom URL reputation score
     url = url.lower()
     keywords = ["login", "verify", "update", "secure", "account", "bank"]
     shorteners = ["bit.ly", "tinyurl", "t.co", "is.gd"]
+    risky_ext = (".exe", ".scr", ".apk", ".zip", ".bat", ".hta", ".msi", ".jar", ".sh")
 
     if not url.startswith("https://"):
         score += 20
@@ -33,6 +34,10 @@ def url_rep(url):  # custom URL reputation score
 
     if any(char.isdigit() for char in url.split("//")[-1].split("/")[0]):
         score += 25
+
+    path = url.split("?")[0].split("#")[0]  # drop query/fragment
+    if path.endswith(risky_ext):
+        score += 20
 
     if score > 100:  # just a limit cap
         score = 100
