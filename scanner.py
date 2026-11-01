@@ -1,13 +1,17 @@
+import os
 import requests
 import time
+from dotenv import load_dotenv
 
-API_KEY = "YOUR_API_KEY"
+load_dotenv()
+
+API_KEY = os.getenv("VT_API_KEY")
 
 VT_URLS = "https://www.virustotal.com/api/v3/urls"
 VT_ANALYSES = "https://www.virustotal.com/api/v3/analyses/{}"
 
 
-def url_rep(url):  # local heuristic URL reputation score
+def url_rep(url):  # custom URL reputation score
     score = 0
     url = url.lower()
     keywords = ["login", "verify", "update", "secure", "account", "bank"]
@@ -48,6 +52,9 @@ def scan_url(url, max_wait=60):
 
     Returns a dict: {score, risk, stats} or {error} on failure.
     """
+    if not API_KEY:
+        return {"error": "VT_API_KEY not set. Copy .env.example to .env and add your key."}
+
     score = url_rep(url)
     headers = {"x-apikey": API_KEY}
 
