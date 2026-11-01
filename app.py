@@ -1,8 +1,13 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_from_directory
 
 from scanner import scan_url
 
 app = Flask(__name__)
+
+
+@app.route("/css/<path:filename>")
+def css(filename):
+    return send_from_directory("templates/css", filename)
 
 
 @app.route("/", methods=["GET", "POST"])
