@@ -1,8 +1,7 @@
 import requests
 import time
-import cred
 
-#  API = "API_KEY"
+API_KEY = "YOUR_API_KEY"
 
 
 def url_rep(url): # URL Rep scanner
@@ -43,7 +42,7 @@ match features:
         api_url = "https://www.virustotal.com/api/v3/urls"
 
         headers={
-            "x-apikey": cred.API  #Change cred.API to API var
+            "x-apikey": API_KEY
         }
 
         data = {
