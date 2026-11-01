@@ -13,6 +13,7 @@ VT_ANALYSES = "https://www.virustotal.com/api/v3/analyses/{}"
 
 def url_rep(url):  # custom URL reputation score
     score = 0
+    reasons = []  # (explanation, points) for each factor that fired
     url = url.lower()
     keywords = ["login", "verify", "update", "secure", "account", "bank"]
     shorteners = ["bit.ly", "tinyurl", "t.co", "is.gd"]
@@ -20,28 +21,35 @@ def url_rep(url):  # custom URL reputation score
 
     if not url.startswith("https://"):
         score += 20
+        reasons.append(("Not served over HTTPS (insecure connection)", 20))
 
     for clues in keywords:
         if clues in url:
             score += 10
+            reasons.append((f"Contains phishing keyword '{clues}'", 10))
 
     for short in shorteners:
         if short in url:
             score += 15
+            reasons.append((f"Uses URL shortener '{short}' (hides destination)", 15))
 
     if len(url) > 75:
         score += 10
+        reasons.append((f"Unusually long URL ({len(url)} chars)", 10))
 
     if any(char.isdigit() for char in url.split("//")[-1].split("/")[0]):
         score += 25
+        reasons.append(("Digits in hostname (possible IP or spoofed host)", 25))
 
     path = url.split("?")[0].split("#")[0]  # drop query/fragment
     if path.endswith(risky_ext):
+        ext = "." + path.rsplit(".", 1)[-1]
         score += 20
+        reasons.append((f"Links to executable/archive file ({ext})", 20))
 
     if score > 100:  # just a limit cap
         score = 100
-    return score
+    return score, reasons
 
 
 def risk_label(score):
@@ -60,7 +68,7 @@ def scan_url(url, max_wait=60):
     if not API_KEY:
         return {"error": "VT_API_KEY not set. Copy .env.example to .env and add your key."}
 
-    score = url_rep(url)
+    score, reasons = url_rep(url)
     headers = {"x-apikey": API_KEY}
 
     try:
@@ -92,7 +100,7 @@ def scan_url(url, max_wait=60):
         waited += 5
 
     stats = scan_data["data"]["attributes"]["stats"]
-    return {"score": score, "risk": risk_label(score), "stats": stats}
+    return {"score": score, "risk": risk_label(score), "stats": stats, "reasons": reasons}
 
 
 def _cli():
@@ -109,6 +117,11 @@ def _cli():
             print("\n===== URL Reputation =====")
             print(f"Risk Score: {result['score']}")
             print(result["risk"])
+
+            if result["reasons"]:
+                print("\nWhy:")
+                for text, points in result["reasons"]:
+                    print(f"  +{points:<3} {text}")
 
             stats = result["stats"]
             print("\n===== RESULTS =====")

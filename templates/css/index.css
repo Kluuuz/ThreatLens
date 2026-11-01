@@ -49,3 +49,18 @@ button:hover { background: #2ea043; }
 .error { background: #3d1518; color: #ff7b72; border: 1px solid #f85149;
          padding: 14px 18px; border-radius: 8px; }
 .target { color: #8b949e; font-size: .85rem; word-break: break-all; margin-bottom: 18px; }
+.breakdown { margin-top: 24px; border-top: 1px solid #30363d; padding-top: 20px; }
+.breakdown h2 { font-size: 1rem; margin: 0 0 12px; color: #e6edf3; }
+.reasons { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.reasons li {
+  display: flex; align-items: center; gap: 12px;
+  background: #0d1117; border: 1px solid #30363d; border-left: 3px solid #d29922;
+  border-radius: 6px; padding: 10px 14px; font-size: .9rem;
+}
+.reasons .pts {
+  flex-shrink: 0; min-width: 44px; text-align: center;
+  background: #3d2e12; color: #e3b341; border-radius: 4px;
+  padding: 2px 6px; font-weight: 700; font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+}
+.clean { color: #3fb950; font-size: .9rem; margin: 0; }

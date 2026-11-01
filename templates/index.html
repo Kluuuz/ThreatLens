@@ -35,6 +35,19 @@
             <div class="stat harm"><div class="n">{{ result.stats.harmless }}</div><div class="l">Harmless</div></div>
             <div class="stat und"><div class="n">{{ result.stats.undetected }}</div><div class="l">Undetected</div></div>
           </div>
+
+          <div class="breakdown">
+            <h2>Why this score?</h2>
+            {% if result.reasons %}
+              <ul class="reasons">
+                {% for text, points in result.reasons %}
+                  <li><span class="pts">+{{ points }}</span> {{ text }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="clean">No local phishing indicators triggered — heuristic score is 0.</p>
+            {% endif %}
+          </div>
         </div>
       {% endif %}
     {% endif %}
