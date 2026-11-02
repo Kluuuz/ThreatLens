@@ -1,94 +1,138 @@
+import os
 import requests
 import time
-import cred
+from dotenv import load_dotenv
 
-#  API = "API_KEY"
+load_dotenv()
+
+API_KEY = os.getenv("VT_API_KEY")
+
+VT_URLS = "https://www.virustotal.com/api/v3/urls"
+VT_ANALYSES = "https://www.virustotal.com/api/v3/analyses/{}"
 
 
-def url_rep(url): # URL Rep scanner
-
+def url_rep(url):  # custom URL reputation score
     score = 0
+    reasons = []  # (explanation, points) for each factor that fired
     url = url.lower()
     keywords = ["login", "verify", "update", "secure", "account", "bank"]
     shorteners = ["bit.ly", "tinyurl", "t.co", "is.gd"]
+    risky_ext = (".exe", ".scr", ".apk", ".zip", ".bat", ".hta", ".msi", ".jar", ".sh")
 
     if not url.startswith("https://"):
         score += 20
+        reasons.append(("Not served over HTTPS (insecure connection)", 20))
 
     for clues in keywords:
         if clues in url:
-            score+=10
+            score += 10
+            reasons.append((f"Contains phishing keyword '{clues}'", 10))
 
     for short in shorteners:
         if short in url:
-            score +=15
+            score += 15
+            reasons.append((f"Uses URL shortener '{short}' (hides destination)", 15))
 
     if len(url) > 75:
         score += 10
+        reasons.append((f"Unusually long URL ({len(url)} chars)", 10))
 
     if any(char.isdigit() for char in url.split("//")[-1].split("/")[0]):
         score += 25
+        reasons.append(("Digits in hostname (possible IP or spoofed host)", 25))
 
-    if score > 100: # just a limit cap
+    path = url.split("?")[0].split("#")[0]  # drop query/fragment
+    if path.endswith(risky_ext):
+        ext = "." + path.rsplit(".", 1)[-1]
+        score += 20
+        reasons.append((f"Links to executable/archive file ({ext})", 20))
+
+    if score > 100:  # just a limit cap
         score = 100
-    return score
+    return score, reasons
 
 
-features = int(input("OPTIONS:\n1. Scan URL \n2. Scan IP reputation \nEnter: "))
+def risk_label(score):
+    if score >= 70:
+        return "HIGH RISK (Possible phishing)"
+    elif score >= 40:
+        return "MEDIUM RISK (Suspicious)"
+    return "LOW RISK (Seems safe)"
 
-match features:
-    case 1:
-        url = input("Enter URL: ")
-        score = url_rep(url)
-        api_url = "https://www.virustotal.com/api/v3/urls"
 
-        headers={
-            "x-apikey": cred.API  #Change cred.API to API var
-        }
+def scan_url(url, max_wait=60):
+    """Submit a URL to VirusTotal and return the local score + VT stats.
 
-        data = {
-            "url":url
-        }
+    Returns a dict: {score, risk, stats} or {error} on failure.
+    """
+    if not API_KEY:
+        return {"error": "VT_API_KEY not set. Copy .env.example to .env and add your key."}
 
-        response = requests.post(api_url, headers=headers, data=data)
+    score, reasons = url_rep(url)
+    headers = {"x-apikey": API_KEY}
 
+    try:
+        response = requests.post(VT_URLS, headers=headers, data={"url": url}, timeout=30)
         result = response.json()
+    except (requests.RequestException, ValueError) as e:
+        return {"error": f"Submission failed: {e}"}
 
-        scan_id = result["data"]["id"]
+    if "data" not in result:
+        msg = result.get("error", {}).get("message", "Unexpected VirusTotal response")
+        return {"error": msg}
 
-        result_url = f"https://www.virustotal.com/api/v3/analyses/{scan_id}"
+    scan_id = result["data"]["id"]
+    result_url = VT_ANALYSES.format(scan_id)
 
-
-        while True: #Scan completion timer
-            scan_result = requests.get(result_url, headers=headers)
-            scan_data = scan_result.json()
-
+    waited = 0
+    while True:  # poll until analysis completes (bounded by max_wait)
+        try:
+            scan_data = requests.get(result_url, headers=headers, timeout=30).json()
             status = scan_data["data"]["attributes"]["status"]
+        except (requests.RequestException, ValueError, KeyError) as e:
+            return {"error": f"Result fetch failed: {e}"}
 
-            if status == "completed":
-                break
+        if status == "completed":
+            break
+        if waited >= max_wait:
+            return {"error": "Timed out waiting for VirusTotal analysis"}
+        time.sleep(5)
+        waited += 5
 
-            print("Scanning... waiting 5 seconds")
-            time.sleep(5)
+    stats = scan_data["data"]["attributes"]["stats"]
+    return {"score": score, "risk": risk_label(score), "stats": stats, "reasons": reasons}
 
 
-        stats = scan_data["data"]["attributes"]["stats"]
+def _cli():
+    features = int(input("OPTIONS:\n1. Scan URL \n2. Scan IP reputation \nEnter: "))
+    match features:
+        case 1:
+            url = input("Enter URL: ")
+            result = scan_url(url)
 
-        print("\n===== URL Reputation =====")
-        print(f"Risk Score: {score}")
-        if score >= 70:
-            print("⚠ HIGH RISK (Possible phishing)")
-        elif score >= 40:
-            print("⚠ MEDIUM RISK (Suspicious)")
-        else:
-             print("✔ LOW RISK (Seems safe)")
+            if "error" in result:
+                print("Error:", result["error"])
+                return
 
-        print("\n===== RESULTS =====")
-        print("Malicious :", stats["malicious"])
-        print("Suspicious:", stats["suspicious"])
-        print("Harmless  :", stats["harmless"])
-        print("Undetected:", stats["undetected"])
-    
-    case 2: 
-        print("\n Still underdevelopment")
+            print("\n===== URL Reputation =====")
+            print(f"Risk Score: {result['score']}")
+            print(result["risk"])
 
+            if result["reasons"]:
+                print("\nWhy:")
+                for text, points in result["reasons"]:
+                    print(f"  +{points:<3} {text}")
+
+            stats = result["stats"]
+            print("\n===== RESULTS =====")
+            print("Malicious :", stats["malicious"])
+            print("Suspicious:", stats["suspicious"])
+            print("Harmless  :", stats["harmless"])
+            print("Undetected:", stats["undetected"])
+
+        case 2:
+            print("\n Still underdevelopment")
+
+
+if __name__ == "__main__":
+    _cli()

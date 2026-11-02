@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ThreatLens</title>
+  <link rel="stylesheet" href="/css/index.css">
+</head>
+<body>
+  <div class="wrap">
+    <h1>Threat<span>Lens</span></h1>
+    <p class="sub">URL reputation scanning via VirusTotal + local phishing heuristics</p>
+
+    <form method="post">
+      <input type="text" name="url" placeholder="https://example.com" value="{{ url }}" required autofocus>
+      <button type="submit">Scan</button>
+    </form>
+
+    {% if result %}
+      {% if result.error %}
+        <div class="error">⚠ {{ result.error }}</div>
+      {% else %}
+        <div class="card">
+          <div class="target">Target: {{ url }}</div>
+
+          {% set band = 'high' if result.score >= 70 else ('medium' if result.score >= 40 else 'low') %}
+          <div class="banner {{ band }}">
+            <span>{{ result.risk }}</span>
+            <span class="score">{{ result.score }}</span>
+          </div>
+
+          <div class="stats">
+            <div class="stat mal"><div class="n">{{ result.stats.malicious }}</div><div class="l">Malicious</div></div>
+            <div class="stat sus"><div class="n">{{ result.stats.suspicious }}</div><div class="l">Suspicious</div></div>
+            <div class="stat harm"><div class="n">{{ result.stats.harmless }}</div><div class="l">Harmless</div></div>
+            <div class="stat und"><div class="n">{{ result.stats.undetected }}</div><div class="l">Undetected</div></div>
+          </div>
+
+          <div class="breakdown">
+            <h2>Why this score?</h2>
+            {% if result.reasons %}
+              <ul class="reasons">
+                {% for text, points in result.reasons %}
+                  <li><span class="pts">+{{ points }}</span> {{ text }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="clean">No local phishing indicators triggered — heuristic score is 0.</p>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+</body>
+</html>

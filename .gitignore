@@ -2,3 +2,7 @@ goal.txt
 test.py
 example-code.txt
 cred.py
+.env
+__pycache__/
+*.pyc
+url_examples.txt
