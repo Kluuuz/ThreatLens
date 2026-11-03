@@ -8,6 +8,10 @@
 </head>
 <body>
   <div class="wrap">
+    <div class="topbar">
+      <span>Signed in as <strong>{{ current_user.username }}</strong></span>
+      <a href="{{ url_for('logout') }}">Log out</a>
+    </div>
     <h1>Threat<span>Lens</span></h1>
     <p class="sub">URL reputation scanning via VirusTotal + local phishing heuristics</p>
 

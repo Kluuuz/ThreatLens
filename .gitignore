@@ -6,3 +6,5 @@ cred.py
 __pycache__/
 *.pyc
 url_examples.txt
+*.db
+instance/
