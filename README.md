@@ -4,6 +4,25 @@ ThreatLens is a Python-based threat intelligence tool that analyzes the reputati
 
 ## Features
 
+### Web workspace and saved reports
+
+Run the web app with `python app.py`, then open `http://127.0.0.1:5000`.
+Install all web dependencies with `pip install -r requirements.txt` and set
+`VT_API_KEY` in `.env` (see `.env.example`).
+
+Successful URL analyses are saved in `instance/history.sqlite3`. The workspace
+shows the latest 20 scans; each saved report can be reopened and downloaded as
+JSON or CSV without calling VirusTotal again. Timestamps are UTC. API failures
+are not saved. If history storage is unavailable, the current scan result is
+still shown with a notice. Storage uses Python's built-in SQLite; no additional
+service or package is needed.
+
+History belongs to the app instance and is shared by people using that instance;
+there are no per-user accounts. The database and `.env` are excluded from Git.
+The scan submission and scoring logic remain in `scanner.py`.
+
+Run regression checks with `python -m unittest discover -s tests -v`.
+
 ### URL Reputation Scanning
 
 * Scan URLs using the VirusTotal API
