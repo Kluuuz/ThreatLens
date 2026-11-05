@@ -3,54 +3,82 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ThreatLens</title>
-  <link rel="stylesheet" href="/css/index.css">
+  <meta name="theme-color" content="#f4f3ed">
+  <title>ThreatLens — URL intelligence</title>
+  <link rel="stylesheet" href="{{ url_for('css', filename='index.css') }}">
 </head>
 <body>
-  <div class="wrap">
-    <h1>Threat<span>Lens</span></h1>
-    <p class="sub">URL reputation scanning via VirusTotal + local phishing heuristics</p>
-
-    <form method="post">
-      <input type="text" name="url" placeholder="https://example.com" value="{{ url }}" required autofocus>
-      <button type="submit">Scan</button>
-    </form>
-
+  <header class="masthead">
+    <a class="brand" href="/" aria-label="ThreatLens home"><span class="brand-mark" aria-hidden="true">⌖</span>ThreatLens<span class="brand-dot">.</span></a>
+    <span class="edition">URL INTELLIGENCE / WORKSPACE 01</span>
+    <a class="header-link" href="#method">How it works <span aria-hidden="true">↗</span></a>
+  </header>
+  <main class="workspace">
+    <section class="intro" aria-labelledby="page-title">
+      <div><p class="eyebrow"><span class="status-dot"></span> INVESTIGATE BEFORE YOU INTERACT</p>
+      <h1 id="page-title">A closer look.<br>A clearer decision.</h1></div>
+      <p class="intro-copy">Look past the link. Inspect a URL with multi-vendor intelligence and transparent phishing signals.</p>
+    </section>
+    <section class="scan-panel" aria-labelledby="scan-title">
+      <div class="panel-heading"><h2 id="scan-title"><span class="section-number">01</span> Inspect a URL</h2><span class="tag">URL SCANNER</span></div>
+      <form method="post" action="{{ url_for('index') }}" id="scan-form">
+        <label for="url">Target URL</label>
+        <div class="input-row"><span class="input-icon" aria-hidden="true">↗</span><input id="url" type="url" name="url" placeholder="https://example.com" value="{{ url }}" required autocomplete="url" spellcheck="false" aria-describedby="scan-note"><button type="submit"><span id="button-label">Analyze URL</span><span aria-hidden="true">→</span></button></div>
+        <div class="form-note"><p id="scan-note">Include https:// or http://. Submitted URLs are sent to VirusTotal.</p><span>VIRUSTOTAL + LOCAL HEURISTICS</span></div>
+        <p id="scan-progress" class="scan-progress" role="status" hidden>Analysis in progress. Waiting for vendor results may take a minute…</p>
+      </form>
+    </section>
+    {% if notice %}<p class="history-notice" role="status">{{ notice }}</p>{% endif %}
     {% if result %}
       {% if result.error %}
-        <div class="error">⚠ {{ result.error }}</div>
+      <section class="error" role="alert"><span class="error-symbol" aria-hidden="true">!</span><div><h2>Analysis could not be completed</h2><p>{{ result.error }}</p><p class="error-hint">Review the URL or configuration, then try again.</p></div></section>
       {% else %}
-        <div class="card">
-          <div class="target">Target: {{ url }}</div>
-
-          {% set band = 'high' if result.score >= 70 else ('medium' if result.score >= 40 else 'low') %}
-          <div class="banner {{ band }}">
-            <span>{{ result.risk }}</span>
-            <span class="score">{{ result.score }}</span>
-          </div>
-
-          <div class="stats">
-            <div class="stat mal"><div class="n">{{ result.stats.malicious }}</div><div class="l">Malicious</div></div>
-            <div class="stat sus"><div class="n">{{ result.stats.suspicious }}</div><div class="l">Suspicious</div></div>
-            <div class="stat harm"><div class="n">{{ result.stats.harmless }}</div><div class="l">Harmless</div></div>
-            <div class="stat und"><div class="n">{{ result.stats.undetected }}</div><div class="l">Undetected</div></div>
-          </div>
-
-          <div class="breakdown">
-            <h2>Why this score?</h2>
-            {% if result.reasons %}
-              <ul class="reasons">
-                {% for text, points in result.reasons %}
-                  <li><span class="pts">+{{ points }}</span> {{ text }}</li>
-                {% endfor %}
-              </ul>
-            {% else %}
-              <p class="clean">No local phishing indicators triggered — heuristic score is 0.</p>
-            {% endif %}
-          </div>
+      {% set band = 'high' if result.score >= 70 else ('medium' if result.score >= 40 else 'low') %}
+      {% set total = result.stats.malicious + result.stats.suspicious + result.stats.harmless + result.stats.undetected %}
+      <section class="results" aria-labelledby="results-title">
+        <div class="results-heading"><h2 id="results-title"><span class="section-number">02</span> Analysis report</h2><span class="report-status">● ANALYSIS COMPLETE</span></div>
+        <p class="target">{{ url }}</p>
+        {% if scan %}<div class="report-toolbar"><span>Saved {{ scan.created_at }} (UTC)</span><div><a href="{{ url_for('export_report', scan_id=scan.id, format='json') }}">Download JSON &#8595;</a><a href="{{ url_for('export_report', scan_id=scan.id, format='csv') }}">Download CSV &#8595;</a></div></div>{% endif %}
+        <div class="report-grid">
+          <section class="score-panel {{ band }}" aria-labelledby="score-title"><p class="eyebrow" id="score-title">LOCAL HEURISTIC SCORE</p><div class="score">{{ result.score }}<span>/100</span></div><h3>{{ 'High' if band == 'high' else ('Medium' if band == 'medium' else 'Low') }} heuristic risk</h3><div class="score-track" role="meter" aria-label="Local heuristic risk" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ result.score }}"><span style="width: {{ result.score }}%"></span></div><p>Based on URL patterns, independently of vendor verdicts. A low score does not establish that a URL is safe.</p></section>
+          <section class="vendor-panel" aria-labelledby="vendor-title"><div class="vendor-heading"><h3 id="vendor-title">Vendor verdicts</h3><span>{{ total }} classified results</span></div><div class="stats">
+            {% for key, label, class in [('malicious', 'Malicious', 'mal'), ('suspicious', 'Suspicious', 'sus'), ('harmless', 'Harmless', 'harm'), ('undetected', 'Undetected', 'und')] %}
+            <div class="stat {{ class }}"><div class="stat-label"><span class="verdict-dot"></span>{{ label }}</div><div class="stat-value">{{ result.stats[key] }}</div><div class="stat-track"><span style="width: {{ (result.stats[key] / total * 100) if total else 0 }}%"></span></div></div>
+            {% endfor %}
+          </div><p class="vendor-note">Undetected means no verdict was reported, rather than a confirmed harmless result.</p></section>
         </div>
+        <section class="breakdown"><div class="breakdown-heading"><h3>Signals behind the score</h3><span>{{ result.reasons|length }} SIGNAL{{ '' if result.reasons|length == 1 else 'S' }}</span></div>
+          {% if result.reasons %}<ul class="reasons">{% for text, points in result.reasons %}<li><span class="signal-index">{{ '%02d'|format(loop.index) }}</span><span>{{ text }}</span><span class="pts">+{{ points }} <small>pts</small></span></li>{% endfor %}</ul><p class="vendor-note">Signals are additive; the final score is capped at 100.</p>
+          {% else %}<p class="clean"><span aria-hidden="true">✓</span> No local phishing patterns triggered.</p>{% endif %}
+        </section>
+      </section>
       {% endif %}
+    {% else %}
+    <section class="empty-state"><div class="lens-illustration" aria-hidden="true"><span></span><i></i></div><p class="eyebrow">EVERY INVESTIGATION STARTS WITH A LINK</p><h2>Your next clue goes above.</h2><p>Submit a URL to reveal vendor verdicts,<br>risk signals, and the reasons behind them.</p></section>
     {% endif %}
-  </div>
+    <section class="history-panel" aria-labelledby="history-title">
+      <div class="results-heading"><h2 id="history-title">Recent investigations</h2><span class="section-number">LATEST 20</span></div>
+      <p class="history-description">Saved on this app instance. Open a report to review or export it without another scan.</p>
+      {% if history %}<ol class="history-list">{% for item in history %}<li><a href="{{ url_for('report', scan_id=item.id) }}" {% if scan and scan.id == item.id %}aria-current="page"{% endif %}><span class="history-target">{{ item.url }}<small>{{ item.created_at }} (UTC)</small></span><span class="history-score">{{ item.result.score }}<small>/100</small></span><span aria-hidden="true">&#8599;</span></a></li>{% endfor %}</ol>
+      {% else %}<p class="history-empty">No saved scans yet. Completed analyses will appear here.</p>{% endif %}
+    </section>
+    <section class="method" id="method" aria-labelledby="method-title"><div class="method-title"><span class="section-number">FIELD NOTES</span><h2 id="method-title">Two perspectives.<br>One investigation.</h2></div><div><span class="method-index">A / THREAT INTELLIGENCE</span><h3>Check the wider picture</h3><p>VirusTotal aggregates security vendor verdicts to surface known malicious and suspicious URLs.</p></div><div><span class="method-index">B / LOCAL ANALYSIS</span><h3>Read between the characters</h3><p>Local rules flag patterns such as phishing keywords, shortened links, insecure HTTP, and risky file extensions.</p></div></section>
+  </main>
+  <footer><span>ThreatLens <span class="footer-slash">/</span> Look closer.</span><span>Signals inform decisions. They don't guarantee safety.</span></footer>
+  <script>
+    document.getElementById('scan-form').addEventListener('submit', function () {
+      const button = this.querySelector('button');
+      button.disabled = true;
+      this.setAttribute('aria-busy', 'true');
+      document.getElementById('button-label').textContent = 'Analyzing…';
+      document.getElementById('scan-progress').hidden = false;
+    });
+    window.addEventListener('pageshow', function () {
+      document.querySelector('#scan-form button').disabled = false;
+      document.getElementById('scan-form').removeAttribute('aria-busy');
+      document.getElementById('button-label').textContent = 'Analyze URL';
+      document.getElementById('scan-progress').hidden = true;
+    });
+  </script>
 </body>
 </html>
