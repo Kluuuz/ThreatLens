@@ -731,3 +731,19 @@ button{
 .report-toolbar a { color: var(--orange); text-underline-offset: 4px; }
 .history-notice { padding: 14px 18px; border: 1px solid #dfc797; background: #fff6e4; font-size: 12px; line-height: 1.7; }
 @media (max-width:600px) { .history-list a { gap: 12px; padding: 14px 4px; } .history-target { font-size: 10px; } }
+
+/* ---- auth ---- */
+.session { margin: 0; display: flex; align-items: center; gap: 14px; font: 10px var(--mono); letter-spacing: 1px; color: var(--muted); }
+.session button { width: auto; padding: 8px 12px; background: transparent; color: var(--ink); border: 1px solid #b8bcb0; font-size: 11px; }
+.session button:hover { background: var(--ink); color: var(--paper); }
+.auth { max-width: 520px; padding-bottom: 64px; }
+.auth .eyebrow { margin: 0 0 20px; display: flex; align-items: center; gap: 9px; }
+.auth h1 { margin-bottom: 36px; }
+.auth .history-notice { margin: 0 0 18px; }
+.auth-form .auth-input { display: block; border: 1px solid #b8bcb0; background: var(--paper); padding: 13px 14px; margin-bottom: 18px; }
+.auth-form .auth-input:focus { outline: 2px solid var(--orange); outline-offset: 2px; }
+.auth-form button { width: 100%; margin-top: 6px; }
+.auth-note { margin: -8px 0 16px; font-size: 10px; color: var(--muted); }
+.auth-alt { margin: 20px 0 0; font-size: 12px; color: var(--muted); }
+.auth-alt a { color: var(--orange); text-underline-offset: 4px; }
+@media (max-width:900px) { .session span { display: none; } }

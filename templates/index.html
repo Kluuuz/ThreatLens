@@ -12,6 +12,7 @@
     <a class="brand" href="/" aria-label="ThreatLens home"><span class="brand-mark" aria-hidden="true">⌖</span>ThreatLens<span class="brand-dot">.</span></a>
     <span class="edition">URL INTELLIGENCE / WORKSPACE 01</span>
     <a class="header-link" href="#method">How it works <span aria-hidden="true">↗</span></a>
+    {% if current_user.is_authenticated %}<form class="session" method="post" action="{{ url_for('logout') }}"><span>{{ current_user.username }}</span><button type="submit">Log out</button></form>{% endif %}
   </header>
   <main class="workspace">
     <section class="intro" aria-labelledby="page-title">

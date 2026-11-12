@@ -1,12 +1,15 @@
 ﻿import csv
 import io
+import os
 import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from app import app
+os.environ.setdefault('USERS_DB_URI', 'sqlite:///:memory:')
+
+from app import app  # noqa: E402
 
 
 class HistoryTests(unittest.TestCase):
@@ -14,6 +17,9 @@ class HistoryTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.old_db = app.config['HISTORY_DB']
         app.config['HISTORY_DB'] = str(Path(self.temp.name) / 'history.sqlite3')
+        # Authentication is covered in test_auth.py.
+        self.old_login_disabled = app.config.get('LOGIN_DISABLED')
+        app.config['LOGIN_DISABLED'] = True
         self.client = app.test_client()
         self.result = dict(score=45, risk='MEDIUM RISK (Suspicious)',
             stats=dict(malicious=2, suspicious=1, harmless=70, undetected=10),
@@ -21,6 +27,7 @@ class HistoryTests(unittest.TestCase):
 
     def tearDown(self):
         app.config['HISTORY_DB'] = self.old_db
+        app.config['LOGIN_DISABLED'] = self.old_login_disabled
         self.temp.cleanup()
 
     def save(self, url='https://example.com'):
