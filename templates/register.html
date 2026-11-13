@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f3ed">
+  <title>Register — ThreatLens</title>
+  <link rel="stylesheet" href="{{ url_for('css', filename='index.css') }}">
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="{{ url_for('login') }}" aria-label="ThreatLens home"><span class="brand-mark" aria-hidden="true">⌖</span>ThreatLens<span class="brand-dot">.</span></a>
+    <span class="edition">URL INTELLIGENCE / REGISTER</span>
+  </header>
+  <main class="workspace auth">
+    <p class="eyebrow"><span class="status-dot"></span> NEW INVESTIGATOR</p>
+    <h1>Create an<br>account.</h1>
+    {% for message in get_flashed_messages() %}<p class="history-notice" role="status">{{ message }}</p>{% endfor %}
+    <section class="scan-panel" aria-labelledby="register-title">
+      <div class="panel-heading"><h2 id="register-title"><span class="section-number">01</span> Register</h2><span class="tag">ACCOUNT</span></div>
+      <form method="post" class="auth-form">
+        <label for="username">Username</label>
+        <input class="auth-input" id="username" type="text" name="username" required autofocus autocomplete="username" maxlength="64" spellcheck="false">
+        <label for="password">Password</label>
+        <input class="auth-input" id="password" type="password" name="password" required minlength="8" autocomplete="new-password" aria-describedby="password-note">
+        <label for="confirm">Confirm password</label>
+        <input class="auth-input" id="confirm" type="password" name="confirm" required minlength="8" autocomplete="new-password">
+        <p class="auth-note" id="password-note">At least 8 characters.</p>
+        <button type="submit"><span>Create account</span><span aria-hidden="true">→</span></button>
+      </form>
+      <p class="auth-alt">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+    </section>
+  </main>
+  <footer><span>ThreatLens <span class="footer-slash">/</span> Look closer.</span><span>Signals inform decisions. They don't guarantee safety.</span></footer>
+</body>
+</html>

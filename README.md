@@ -17,8 +17,10 @@ are not saved. If history storage is unavailable, the current scan result is
 still shown with a notice. Storage uses Python's built-in SQLite; no additional
 service or package is needed.
 
-History belongs to the app instance and is shared by people using that instance;
-there are no per-user accounts. The database and `.env` are excluded from Git.
+Every page requires a login. Create an account at `/register`, then sign in at
+`/login`; accounts are stored in `instance/users.db` with hashed passwords. Set
+`SECRET_KEY` in `.env` so sessions survive restarts. Scan history is shared by
+all signed-in users of the instance. The databases and `.env` are excluded from Git.
 The scan submission and scoring logic remain in `scanner.py`.
 
 Run regression checks with `python -m unittest discover -s tests -v`.
